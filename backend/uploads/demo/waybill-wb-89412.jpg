@@ -1,0 +1,7 @@
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#1e293b"/>
+  <rect x="20" y="20" width="560" height="360" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="6,6"/>
+  <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="22" font-weight="bold" fill="#ffffff">WAYBILL VERIFICATION: WB-MUG-89412</text>
+  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#e2e8f0">Muger Cement Enterprise - Dispatch 1,000 Bags</text>
+  <text x="50%" y="85%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#94a3b8">SiteLedger Field Evidence Verification System - Ethiopia</text>
+</svg>

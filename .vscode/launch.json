@@ -1,0 +1,43 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "SiteLedger (Chrome)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "cwd": "app",
+            "deviceId": "chrome",
+            "args": [
+                "--web-port=8080"
+            ]
+        },
+        {
+            "name": "SiteLedger (Web Server)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "cwd": "app",
+            "deviceId": "web-server",
+            "args": [
+                "--web-port=8080"
+            ]
+        },
+        {
+            "name": "SiteLedger (Edge)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "cwd": "app",
+            "deviceId": "edge"
+        },
+        {
+            "name": "SiteLedger (Android)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "cwd": "app",
+            "deviceId": "android"
+        }
+    ]
+}
