@@ -17,7 +17,7 @@ class ReceiveMaterialScreen extends ConsumerStatefulWidget {
 
 class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
   PurchaseOrderModel? _selectedPo;
-  
+
   // Step 1: Logistics Fields
   final _waybillCtrl = TextEditingController(text: 'WB-MUG-91024');
   final _truckPlateCtrl = TextEditingController(text: 'ET-3-77219-AA');
@@ -28,7 +28,7 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
   // Step 2: Line quantities
   double _orderedQty = 1000.0;
   double _deliveredQty = 960.0; // 40 shortage
-  double _acceptedQty = 930.0;  // 30 damaged
+  double _acceptedQty = 930.0; // 30 damaged
   double _damagedQty = 30.0;
   double _rejectedQty = 30.0;
   final _rejectionReasonCtrl = TextEditingController(text: 'Moisture ingress on 30 sacks. Partial hardening.');
@@ -133,7 +133,7 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               backgroundColor: AppColors.amberWarning,
-              content: Text('📱 Offline mode: Receipt saved to Drift SQLite outbox. Will auto-sync when online!'),
+              content: Text('📱 Offline mode: Receipt saved to Drift SQLite outbox. Auto-syncing when online.'),
             ),
           );
         } else {
@@ -163,15 +163,21 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Material Receiving'),
+        title: const Text('Material Intake Verification'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Select Purchase Order Card
-            Card(
+            // Step 1: Select Purchase Order Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppShadows.subtle,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -180,10 +186,7 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          '1. Purchase Order Match',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navyDark),
-                        ),
+                        _stepHeader(number: '1', title: 'Purchase Order Match'),
                         TextButton.icon(
                           onPressed: () => context.push('/scan'),
                           icon: const Icon(Icons.qr_code_scanner, size: 16),
@@ -191,12 +194,22 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     ordersAsync.when(
                       data: (orders) {
                         final validOrders = orders.where((o) => o.canReceive).toList();
                         if (validOrders.isEmpty) {
-                          return const Text('No approved purchase orders available for receiving.', style: TextStyle(color: AppColors.redCritical));
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.redBg,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'No approved purchase orders available for receiving.',
+                              style: TextStyle(color: AppColors.redCritical, fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          );
                         }
 
                         if (_selectedPo == null && validOrders.isNotEmpty) {
@@ -206,7 +219,7 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                         return DropdownButtonFormField<PurchaseOrderModel>(
                           value: _selectedPo,
                           isExpanded: true,
-                          decoration: const InputDecoration(labelText: 'Select Order'),
+                          decoration: const InputDecoration(labelText: 'Select Authorized Order'),
                           items: validOrders.map((o) {
                             return DropdownMenuItem(
                               value: o,
@@ -239,17 +252,20 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
             const SizedBox(height: 16),
 
             // Step 2: Logistics & Carrier Info
-            Card(
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppShadows.subtle,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '2. Waybill & Transport Verification',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navyDark),
-                    ),
-                    const SizedBox(height: 12),
+                    _stepHeader(number: '2', title: 'Waybill & Transport Verification'),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _waybillCtrl,
                       decoration: const InputDecoration(
@@ -297,7 +313,13 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
             const SizedBox(height: 16),
 
             // Step 3: Material Quantity Tally & Defect Detection
-            Card(
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppShadows.subtle,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -306,17 +328,14 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          '3. Material Intake Tally',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navyDark),
-                        ),
+                        _stepHeader(number: '3', title: 'Material Intake Tally'),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.blueLight,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text('Gate 4 Scale', style: TextStyle(color: AppColors.electricBlue, fontWeight: FontWeight.w700, fontSize: 11)),
+                          child: const Text('Gate 4 Weighbridge', style: TextStyle(color: AppColors.electricBlue, fontWeight: FontWeight.w700, fontSize: 11)),
                         ),
                       ],
                     ),
@@ -329,14 +348,14 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                       color: AppColors.navyDark,
                       icon: Icons.checklist_rounded,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     // Delivered Qty Input
                     Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           flex: 3,
-                          child: const Text('Total Delivered on Truck:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          child: Text('Total Delivered on Truck:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.navyDark)),
                         ),
                         Expanded(
                           flex: 2,
@@ -352,14 +371,14 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     // Damaged / Rejected Qty Input
                     Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           flex: 3,
-                          child: const Text('Damaged / Rejected:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.redCritical)),
+                          child: Text('Damaged / Rejected:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.redCritical)),
                         ),
                         Expanded(
                           flex: 2,
@@ -378,7 +397,7 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                     ),
 
                     if (_rejectedQty > 0) ...[
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       TextFormField(
                         controller: _rejectionReasonCtrl,
                         decoration: const InputDecoration(
@@ -388,25 +407,32 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                       ),
                     ],
 
-                    const Divider(height: 24),
+                    const Divider(height: 28),
 
-                    // Net Accepted Result
+                    // Net Accepted Result Box
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: AppColors.emeraldBg,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.emeraldSuccess.withOpacity(0.3)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Net Sound Accepted Quantity:',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: AppColors.emeraldSuccess),
+                          Row(
+                            children: const [
+                              Icon(Icons.check_circle_rounded, color: AppColors.emeraldSuccess, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Net Sound Accepted Quantity:',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.emeraldSuccess),
+                              ),
+                            ],
                           ),
                           Text(
                             '$_acceptedQty Bags',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.emeraldSuccess),
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.emeraldSuccess),
                           ),
                         ],
                       ),
@@ -419,7 +445,7 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.redBg,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppColors.redCritical.withOpacity(0.3)),
                         ),
                         child: Row(
@@ -446,38 +472,44 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
             const SizedBox(height: 16),
 
             // Step 4: Photo Evidence & Verification
-            Card(
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppShadows.subtle,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '4. Photo Evidence & Audit Trail',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navyDark),
-                    ),
+                    _stepHeader(number: '4', title: 'Photo Evidence & Inspection Trail'),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       value: _attachedWaybill,
+                      activeColor: AppColors.electricBlue,
                       onChanged: (v) => setState(() => _attachedWaybill = v ?? false),
-                      title: const Text('Signed Supplier Waybill Attached', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      subtitle: const Text('Waybill # WB-MUG-91024', style: TextStyle(fontSize: 11)),
+                      title: const Text('Signed Supplier Waybill Attached', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      subtitle: const Text('Physical paper delivery note photographed', style: TextStyle(fontSize: 11.5)),
                       secondary: const Icon(Icons.document_scanner_rounded, color: AppColors.electricBlue),
                       dense: true,
                     ),
                     CheckboxListTile(
                       value: _attachedTruckPlate,
+                      activeColor: AppColors.electricBlue,
                       onChanged: (v) => setState(() => _attachedTruckPlate = v ?? false),
-                      title: const Text('Truck License Plate Photo Attached', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      subtitle: const Text('Scale gate photo: ET-3-77219-AA', style: TextStyle(fontSize: 11)),
+                      title: const Text('Truck License Plate Photo Attached', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      subtitle: const Text('Scale gate photo: ET-3-77219-AA', style: TextStyle(fontSize: 11.5)),
                       secondary: const Icon(Icons.camera_alt_outlined, color: AppColors.electricBlue),
                       dense: true,
                     ),
                     CheckboxListTile(
                       value: _attachedDamagePhoto,
+                      activeColor: AppColors.redCritical,
                       onChanged: (v) => setState(() => _attachedDamagePhoto = v ?? false),
-                      title: const Text('Damage Inspection Close-Up Attached', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      subtitle: const Text('Pallet moisture evidence', style: TextStyle(fontSize: 11)),
+                      title: const Text('Damage Inspection Close-Up Attached', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      subtitle: const Text('Pallet moisture & torn bag evidence', style: TextStyle(fontSize: 11.5)),
                       secondary: const Icon(Icons.broken_image_outlined, color: AppColors.redCritical),
                       dense: true,
                     ),
@@ -490,13 +522,14 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
 
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 18),
                 backgroundColor: AppColors.emeraldSuccess,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: _isSubmitting ? null : _handleSubmit,
               child: _isSubmitting
                   ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Verify Delivery & Issue Receipt', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  : const Text('Verify Delivery & Issue Electronic Receipt', style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800)),
             ),
           ],
         ),
@@ -504,12 +537,38 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
     );
   }
 
+  Widget _stepHeader({required String number, required String title}) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: const BoxDecoration(
+            color: AppColors.navyDark,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.navyDark),
+        ),
+      ],
+    );
+  }
+
   Widget _tallyTile({required String label, required String value, required Color color, required IconData icon}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surfaceWarm,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Row(
@@ -518,11 +577,11 @@ class _ReceiveMaterialScreenState extends ConsumerState<ReceiveMaterialScreen> {
           Row(
             children: [
               Icon(icon, size: 18, color: color),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: color)),
+          Text(value, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: color)),
         ],
       ),
     );

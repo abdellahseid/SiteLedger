@@ -20,10 +20,18 @@ class _DiscrepanciesListScreenState extends ConsumerState<DiscrepanciesListScree
   @override
   Widget build(BuildContext context) {
     final discrepanciesAsync = ref.watch(discrepanciesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Discrepancy Issues'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome_rounded),
+            tooltip: 'Gemini AI Insights',
+            onPressed: () => context.push('/reports'),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -35,11 +43,11 @@ class _DiscrepanciesListScreenState extends ConsumerState<DiscrepanciesListScree
               children: [
                 _tabChip('ALL', 'All Issues'),
                 const SizedBox(width: 8),
-                _tabChip('OPEN', 'Open'),
+                _tabChip('OPEN', 'Open Variances'),
                 const SizedBox(width: 8),
                 _tabChip('UNDER_REVIEW', 'Under Review'),
                 const SizedBox(width: 8),
-                _tabChip('RESOLVED', 'Resolved'),
+                _tabChip('RESOLVED', 'Resolved & Settled'),
               ],
             ),
           ),
@@ -55,84 +63,166 @@ class _DiscrepanciesListScreenState extends ConsumerState<DiscrepanciesListScree
                 if (filtered.isEmpty) {
                   return EmptyState(
                     icon: Icons.verified_outlined,
-                    title: 'No Discrepancies',
+                    title: 'No Discrepancies Found',
                     message: _selectedTab == 'ALL'
-                        ? 'All deliveries match authorized purchase order specifications.'
+                        ? 'All site material deliveries match authorized purchase order specifications.'
                         : 'No discrepancies currently in "$_selectedTab" status.',
                   );
                 }
 
+                final totalExposure = filtered.fold<double>(0.0, (acc, d) => acc + d.financialImpactEtb);
+
                 return RefreshIndicator(
                   onRefresh: () async => ref.invalidate(discrepanciesProvider),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, idx) {
-                      final d = filtered[idx];
-                      return Card(
-                        child: InkWell(
-                          onTap: () => context.push('/issues/${d.id}'),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
+                    children: [
+                      // Exposure Ticker Card
+                      if (_selectedTab == 'ALL' || _selectedTab == 'OPEN')
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.redBg,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppColors.redBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.redCritical.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.shield_outlined, color: AppColors.redCritical, size: 22),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        StatusBadge(status: d.type, isSmall: true),
-                                        const SizedBox(width: 8),
-                                        StatusBadge(status: d.severity, isSmall: true),
-                                      ],
+                                    const Text(
+                                      'Active Commercial Risk Exposure',
+                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.redDark),
                                     ),
-                                    StatusBadge(status: d.status, isSmall: true),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  d.materialName,
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.navyDark),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Supplier: ${d.supplierName} • Waybill: ${d.waybillNumber}',
-                                  style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  d.description,
-                                  style: const TextStyle(fontSize: 13, color: AppColors.navyDark, height: 1.3),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const Divider(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
+                                    const SizedBox(height: 2),
                                     Text(
-                                      'Variance: ${d.varianceQuantity.toInt()} ${d.materialUnit}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: d.varianceQuantity < 0 ? AppColors.redCritical : AppColors.amberWarning,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Impact: ${Formatters.currency(d.financialImpactEtb)}',
-                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.navyDark),
+                                      Formatters.currency(totalExposure),
+                                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: AppColors.redCritical),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.redCritical,
+                                  side: const BorderSide(color: AppColors.redCritical),
+                                  minimumSize: const Size(0, 36),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                ),
+                                onPressed: () => context.push('/reports'),
+                                child: const Text('AI Audit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
                           ),
                         ),
-                      );
-                    },
+
+                      ...filtered.map((d) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: InkWell(
+                            onTap: () => context.push('/issues/${d.id}'),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          StatusBadge(status: d.type, isSmall: true),
+                                          const SizedBox(width: 8),
+                                          StatusBadge(status: d.severity, isSmall: true),
+                                        ],
+                                      ),
+                                      StatusBadge(status: d.status, isSmall: true),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    d.materialName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                      color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Supplier: ${d.supplierName} • Waybill: ${d.waybillNumber}',
+                                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceWarm,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      d.description,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        color: isDark ? AppColors.darkTextSecondary : AppColors.navyDark,
+                                        height: 1.35,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const Divider(height: 22),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            d.varianceQuantity < 0 ? Icons.trending_down_rounded : Icons.trending_up_rounded,
+                                            size: 16,
+                                            color: d.varianceQuantity < 0 ? AppColors.redCritical : AppColors.amberWarning,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Variance: ${d.varianceQuantity.toInt()} ${d.materialUnit}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13,
+                                              color: d.varianceQuantity < 0 ? AppColors.redCritical : AppColors.amberWarning,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        Formatters.currency(d.financialImpactEtb),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 15,
+                                          color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 );
               },
@@ -156,7 +246,9 @@ class _DiscrepanciesListScreenState extends ConsumerState<DiscrepanciesListScree
         fontWeight: FontWeight.w700,
         fontSize: 12,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       onSelected: (_) => setState(() => _selectedTab = code),
     );
   }
 }
+

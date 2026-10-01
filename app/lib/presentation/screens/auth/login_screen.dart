@@ -47,6 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -63,8 +64,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.navyDark,
+                          gradient: AppGradients.primary,
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.electricBlue.withOpacity(0.4),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
                         child: const Icon(Icons.apartment_rounded, color: Colors.white, size: 28),
                       ),
@@ -75,85 +83,116 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Text(
                             'SiteLedger',
                             style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
                               color: AppColors.navyDark,
                               letterSpacing: -0.5,
                             ),
                           ),
                           Text(
-                            'Ethiopia Construction Intelligence',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.electricBlue),
+                            'Construction Delivery Intelligence',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.electricBlue),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 32),
 
-                  // Welcome Heading
-                  const Text(
-                    'Material Delivery Verification',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navyDark),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Offline-first intake control for project managers, storekeepers & suppliers',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
+                  // Welcome Heading Box
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.borderSubtle),
+                      boxShadow: AppShadows.subtle,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Authorized Site Sign-In',
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.navyDark),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Offline-first intake control for project managers, storekeepers & suppliers',
+                          style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.35),
+                        ),
+                        const SizedBox(height: 20),
 
-                  // Login Inputs
-                  TextFormField(
-                    controller: _emailCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Work Email',
-                      prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted),
+                        // Login Inputs
+                        TextFormField(
+                          controller: _emailCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Enterprise Email',
+                            prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _passCtrl,
+                          obscureText: _obscurePass,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                              onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          onPressed: authState.isLoading ? null : _handleLogin,
+                          child: authState.isLoading
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Text('Sign In to Site Ledger', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passCtrl,
-                    obscureText: _obscurePass,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                        onPressed: () => setState(() => _obscurePass = !_obscurePass),
-                      ),
-                    ),
-                  ),
+
                   const SizedBox(height: 24),
-
-                  ElevatedButton(
-                    onPressed: authState.isLoading ? null : _handleLogin,
-                    child: authState.isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Sign In to Project'),
-                  ),
-                  const SizedBox(height: 36),
 
                   // Quick Role Demo Switcher
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.borderSubtle),
+                      boxShadow: AppShadows.subtle,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
-                            Icon(Icons.bolt, color: AppColors.amberWarning, size: 18),
-                            SizedBox(width: 6),
-                            Text(
-                              'Instant Role Switcher (Demo)',
-                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.navyDark),
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: const [
+                                Icon(Icons.bolt_rounded, color: AppColors.amberWarning, size: 20),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Instant Persona Switcher',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.navyDark),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.blueLight,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('1-Tap Demo', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.electricBlue)),
                             ),
                           ],
                         ),
@@ -183,7 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           role: 'SUPPLIER',
                           name: 'Henok Girma',
                           email: 'supplier@siteledger.et',
-                          badgeColor: Color(0xFF64748B),
+                          badgeColor: const Color(0xFF64748B),
                           onTap: () => _quickSwitch('supplier@siteledger.et'),
                         ),
                       ],
@@ -218,13 +257,13 @@ class _DemoUserTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 16,
+              radius: 17,
               backgroundColor: badgeColor.withOpacity(0.15),
               child: Text(
                 name.substring(0, 1),
@@ -236,7 +275,7 @@ class _DemoUserTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.navyDark)),
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.navyDark)),
                   Text(email, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 ],
               ),
@@ -244,7 +283,7 @@ class _DemoUserTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: badgeColor.withOpacity(0.1),
+                color: badgeColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(

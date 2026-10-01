@@ -11,6 +11,7 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg;
     Color fg;
+    Color dotColor;
     String label = status.replaceAll('_', ' ');
 
     switch (status.toUpperCase()) {
@@ -19,7 +20,8 @@ class StatusBadge extends StatelessWidget {
       case 'RESOLVED':
       case 'VERIFIED':
         bg = AppColors.emeraldBg;
-        fg = AppColors.emeraldSuccess;
+        fg = AppColors.emeraldDark;
+        dotColor = AppColors.emeraldSuccess;
         break;
       case 'PENDING_APPROVAL':
       case 'PARTIALLY_RECEIVED':
@@ -27,7 +29,8 @@ class StatusBadge extends StatelessWidget {
       case 'SUBMITTED':
       case 'OPEN':
         bg = AppColors.amberBg;
-        fg = AppColors.amberWarning;
+        fg = AppColors.amberDark;
+        dotColor = AppColors.amberWarning;
         break;
       case 'CRITICAL':
       case 'FLAGGED':
@@ -36,11 +39,13 @@ class StatusBadge extends StatelessWidget {
       case 'REJECTED':
       case 'CANCELLED':
         bg = AppColors.redBg;
-        fg = AppColors.redCritical;
+        fg = AppColors.redDark;
+        dotColor = AppColors.redCritical;
         break;
       default:
-        bg = Color(0xFFF1F5F9);
-        fg = Color(0xFF475569);
+        bg = const Color(0xFFF1F5F9);
+        fg = const Color(0xFF475569);
+        dotColor = const Color(0xFF64748B);
     }
 
     return Container(
@@ -50,18 +55,33 @@ class StatusBadge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: fg.withOpacity(0.2), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: fg.withOpacity(0.18), width: 1.1),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: fg,
-          fontSize: isSmall ? 11 : 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: isSmall ? 5 : 6,
+            height: isSmall ? 5 : 6,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: fg,
+              fontSize: isSmall ? 10.5 : 11.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+

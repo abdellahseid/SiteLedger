@@ -19,43 +19,99 @@ class DashboardScreen extends ConsumerWidget {
     final projectsAsync = ref.watch(projectsProvider);
     final selectedProj = ref.watch(selectedProjectProvider);
     final metricsAsync = ref.watch(dashboardMetricsProvider);
+    final pendingCount = ref.watch(pendingSyncCountProvider).value ?? 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 16,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              user?.organizationName ?? 'Abyssinia Infrastructures PLC',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.electricBlue),
-            ),
             Row(
               children: [
-                Text(
-                  selectedProj?.name ?? 'Bole Lemi Industrial Park',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.navyDark),
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.emeraldSuccess,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                const Icon(Icons.arrow_drop_down, color: AppColors.navyDark),
+                const SizedBox(width: 6),
+                Text(
+                  user?.organizationName ?? 'Abyssinia Infrastructures PLC',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.electricBlue,
+                    letterSpacing: 0.2,
+                  ),
+                ),
               ],
+            ),
+            const SizedBox(height: 2),
+            InkWell(
+              onTap: () => _showProjectSelector(context, ref),
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    selectedProj?.name ?? 'Bole Lemi Industrial Park',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.navyDark,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sync_rounded),
-            tooltip: 'Sync Center',
-            onPressed: () => context.push('/sync'),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.sync_rounded),
+                tooltip: 'Offline Sync Center',
+                onPressed: () => context.push('/sync'),
+              ),
+              if (pendingCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.amberWarning,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
-            icon: const Icon(Icons.bar_chart_rounded),
-            tooltip: 'Reports & AI',
+            icon: const Icon(Icons.auto_awesome_rounded),
+            tooltip: 'Gemini AI & Reports',
             onPressed: () => context.push('/reports'),
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
+            icon: const Icon(Icons.person_outline_rounded),
+            tooltip: 'Settings & Personas',
             onPressed: () => context.push('/settings'),
           ),
+          const SizedBox(width: 6),
         ],
       ),
       body: RefreshIndicator(
@@ -64,47 +120,139 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(projectsProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.only(bottom: 32),
+          padding: const EdgeInsets.only(bottom: 110),
           children: [
             const OfflineSyncBanner(),
 
-            // Project Selector Bar
-            projectsAsync.when(
-              data: (projects) {
-                if (projects.length <= 1) return const SizedBox.shrink();
-                return Container(
-                  height: 48,
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: projects.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, idx) {
-                      final p = projects[idx];
-                      final isSelected = selectedProj?.id == p.id;
-                      return ChoiceChip(
-                        label: Text(p.code),
-                        selected: isSelected,
-                        selectedColor: AppColors.navyDark,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.navyDark,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
+            // Hero Project Card with Gradient Mesh
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.heroCardGradient,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.apartment_rounded, color: Colors.white, size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                selectedProj?.code ?? 'BLIP-01',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11.5,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        onSelected: (_) {
-                          ref.read(selectedProjectProvider.notifier).state = p;
-                          ref.invalidate(dashboardMetricsProvider);
-                        },
-                      );
-                    },
-                  ),
-                );
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.emeraldSuccess.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.emeraldSuccess.withOpacity(0.4)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.wifi_rounded, color: AppColors.emeraldSuccess, size: 13),
+                              SizedBox(width: 5),
+                              Text(
+                                'OFFLINE READY',
+                                style: TextStyle(
+                                  color: AppColors.emeraldSuccess,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 10.5,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      selectedProj?.name ?? 'Bole Lemi Industrial Park (Phase 2)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Client: Industrial Parks Development Corp (IPDC) • General Contractor: Abyssinia SC',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12.5,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.electricBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            onPressed: () => context.push('/scan'),
+                            icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                            label: const Text('Scan Delivery QR', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(color: Colors.white.withOpacity(0.25), width: 1.2),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            onPressed: () => context.push('/receive'),
+                            icon: const Icon(Icons.edit_note_rounded, size: 18),
+                            label: const Text('Manual Intake', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
 
-            // Top KPI Grid
+            const SizedBox(height: 12),
+
+            // Top KPI Metrics
             metricsAsync.when(
               data: (data) {
                 final orders = data['orders'] ?? {};
@@ -112,7 +260,7 @@ class DashboardScreen extends ConsumerWidget {
                 final discrepancies = data['discrepancies'] ?? {};
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
                       Row(
@@ -121,7 +269,7 @@ class DashboardScreen extends ConsumerWidget {
                             child: MetricCard(
                               title: 'Deliveries Intake',
                               value: deliveries['total_deliveries']?.toString() ?? '1',
-                              subtitle: '${deliveries['flagged_deliveries'] ?? 1} flagged',
+                              subtitle: '${deliveries['flagged_deliveries'] ?? 1} flagged for review',
                               icon: Icons.local_shipping_rounded,
                               iconColor: AppColors.electricBlue,
                               onTap: () => context.go('/receipts'),
@@ -132,8 +280,8 @@ class DashboardScreen extends ConsumerWidget {
                             child: MetricCard(
                               title: 'Active Orders',
                               value: orders['total_orders']?.toString() ?? '4',
-                              subtitle: '${orders['active_orders'] ?? 2} approved',
-                              icon: Icons.description_rounded,
+                              subtitle: '${orders['active_orders'] ?? 2} authorized POs',
+                              icon: Icons.assignment_rounded,
                               iconColor: AppColors.emeraldSuccess,
                               onTap: () => context.go('/orders'),
                             ),
@@ -145,9 +293,9 @@ class DashboardScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: MetricCard(
-                              title: 'Open Issues',
+                              title: 'Open Variances',
                               value: discrepancies['open_discrepancies']?.toString() ?? '2',
-                              subtitle: 'Shortage & Damage',
+                              subtitle: 'Shortage & moisture',
                               icon: Icons.warning_amber_rounded,
                               iconColor: AppColors.redCritical,
                               onTap: () => context.go('/issues'),
@@ -157,7 +305,10 @@ class DashboardScreen extends ConsumerWidget {
                           Expanded(
                             child: MetricCard(
                               title: 'Exposure at Risk',
-                              value: Formatters.currency(num.tryParse(discrepancies['at_risk_etb']?.toString() ?? '108000') ?? 108000, compact: true),
+                              value: Formatters.currency(
+                                num.tryParse(discrepancies['at_risk_etb']?.toString() ?? '108000') ?? 108000,
+                                compact: true,
+                              ),
                               subtitle: 'Pending reconciliation',
                               icon: Icons.account_balance_wallet_outlined,
                               iconColor: AppColors.amberWarning,
@@ -171,83 +322,43 @@ class DashboardScreen extends ConsumerWidget {
                 );
               },
               loading: () => const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(24),
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (_, __) => const SizedBox.shrink(),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            // Fast Receiving Action Bar
+            // Quick Hub Navigation Cards
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Card(
-                color: AppColors.navyDark,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.electricBlue,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Material Delivery Receiving',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-                                ),
-                                Text(
-                                  'Scan purchase order QR or enter waybill note',
-                                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.electricBlue,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: () => context.push('/scan'),
-                              icon: const Icon(Icons.qr_code_rounded, size: 18),
-                              label: const Text('Scan Order QR'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Color(0xFF334155)),
-                              ),
-                              onPressed: () => context.push('/receive'),
-                              icon: const Icon(Icons.edit_note_rounded, size: 18),
-                              label: const Text('Manual Entry'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+              child: Row(
+                children: [
+                  _QuickNavCard(
+                    icon: Icons.auto_awesome_rounded,
+                    color: AppColors.purpleAi,
+                    title: 'Gemini AI',
+                    subtitle: 'Audit Queries',
+                    onTap: () => context.push('/reports'),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  _QuickNavCard(
+                    icon: Icons.cloud_sync_outlined,
+                    color: AppColors.amberWarning,
+                    title: 'Sync Outbox',
+                    subtitle: '$pendingCount Queued',
+                    onTap: () => context.push('/sync'),
+                  ),
+                  const SizedBox(width: 10),
+                  _QuickNavCard(
+                    icon: Icons.add_circle_outline_rounded,
+                    color: AppColors.emeraldSuccess,
+                    title: 'New Order',
+                    subtitle: 'Procurement',
+                    onTap: () => context.push('/orders/create'),
+                  ),
+                ],
               ),
             ),
 
@@ -263,30 +374,61 @@ class DashboardScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: const [
-                              Text(
-                                'Material Intake Progress',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navyDark),
-                              ),
-                              Icon(Icons.inventory_2_outlined, color: AppColors.electricBlue, size: 18),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ...materials.take(4).map((m) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: Column(
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    m['name'] ?? '',
-                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.navyDark),
+                                    'Material Intake Fulfillment',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Target vs verified physical offload',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.blueLight,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.inventory_2_outlined, color: AppColors.electricBlue, size: 20),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          ...materials.take(4).map((m) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        m['name'] ?? '',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13.5,
+                                          color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 6),
                                   MaterialProgressBar(
@@ -324,39 +466,78 @@ class DashboardScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Recent Site Deliveries',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navyDark),
+                            style: TextStyle(
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                           TextButton(
                             onPressed: () => context.go('/receipts'),
-                            child: const Text('View All'),
+                            child: const Text('View All', style: TextStyle(fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 6),
                       ...recents.map((r) {
                         final isFlagged = r['status'] == 'FLAGGED';
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
-                          child: ListTile(
+                          child: InkWell(
                             onTap: () => context.push('/receipts/${r['id']}'),
-                            leading: CircleAvatar(
-                              backgroundColor: isFlagged ? AppColors.redBg : AppColors.blueLight,
-                              child: Icon(
-                                isFlagged ? Icons.report_problem_rounded : Icons.local_shipping_outlined,
-                                color: isFlagged ? AppColors.redCritical : AppColors.electricBlue,
-                                size: 20,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: isFlagged ? AppColors.redBg : AppColors.blueLight,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(
+                                      isFlagged ? Icons.report_problem_rounded : Icons.local_shipping_outlined,
+                                      color: isFlagged ? AppColors.redCritical : AppColors.electricBlue,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              r['waybill_number'] ?? r['receipt_number'] ?? '',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 14.5,
+                                                color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          '${r['supplier_name']} • Truck: ${r['truck_license_plate']}',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  StatusBadge(status: r['status'] ?? 'SUBMITTED', isSmall: true),
+                                ],
                               ),
                             ),
-                            title: Text(
-                              r['waybill_number'] ?? r['receipt_number'] ?? '',
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.navyDark),
-                            ),
-                            subtitle: Text(
-                              '${r['supplier_name']} • Truck: ${r['truck_license_plate']}',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                            ),
-                            trailing: StatusBadge(status: r['status'] ?? 'SUBMITTED', isSmall: true),
                           ),
                         );
                       }),
@@ -372,4 +553,169 @@ class DashboardScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _showProjectSelector(BuildContext context, WidgetRef ref) {
+    final projects = ref.read(projectsProvider).value ?? [];
+    if (projects.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final selectedProj = ref.watch(selectedProjectProvider);
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkBorder : AppColors.borderSubtle,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Switch Active Project',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 14),
+              ...projects.map((p) {
+                final isSelected = p.id == selectedProj?.id;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? (isDark ? AppColors.electricBlue.withOpacity(0.15) : AppColors.blueLight)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected ? AppColors.electricBlue : (isDark ? AppColors.darkBorder : AppColors.borderSubtle),
+                    ),
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.electricBlue : AppColors.borderSubtle,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.apartment_rounded,
+                        color: isSelected ? Colors.white : AppColors.navyDark,
+                        size: 18,
+                      ),
+                    ),
+                    title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    subtitle: Text('${p.code} • ${p.location}', style: const TextStyle(fontSize: 12)),
+                    trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.electricBlue) : null,
+                    onTap: () {
+                      ref.read(selectedProjectProvider.notifier).state = p;
+                      ref.invalidate(dashboardMetricsProvider);
+                      ref.invalidate(ordersProvider);
+                      ref.invalidate(receiptsProvider);
+                      ref.invalidate(discrepanciesProvider);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
+
+class _QuickNavCard extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _QuickNavCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.borderSubtle,
+                width: 1.1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withOpacity(isDark ? 0.2 : 0.03),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

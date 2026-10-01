@@ -25,7 +25,8 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Document Discrepancy Resolution'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Document Discrepancy Resolution', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -35,7 +36,7 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
                   'Select formal commercial resolution agreed with supplier:',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   value: selectedType,
                   decoration: const InputDecoration(labelText: 'Resolution Type'),
@@ -103,6 +104,7 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
   @override
   Widget build(BuildContext context) {
     final detailFuture = ref.watch(discrepancyRepoProvider).getDiscrepancyDetails(widget.discrepancyId);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -123,12 +125,12 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
           final ai = data.aiInsight;
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
             children: [
               // Header Card
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -145,32 +147,54 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
                           StatusBadge(status: d.status),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                       Text(
                         d.materialName,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navyDark),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                          letterSpacing: -0.4,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Project: ${d.projectName} (${d.projectCode})',
-                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                        style: const TextStyle(fontSize: 13, color: AppColors.electricBlue, fontWeight: FontWeight.w700),
                       ),
-                      const Divider(height: 24),
-                      _row('Supplier', d.supplierName),
-                      _row('Waybill Number', d.waybillNumber),
-                      _row('Truck License Plate', d.truckLicensePlate),
-                      _row('Purchase Order', d.poNumber),
-                      _row('Expected Quantity', '${d.expectedQuantity.toInt()} ${d.materialUnit}'),
-                      _row('Actual Received', '${d.actualQuantity.toInt()} ${d.materialUnit}'),
-                      _row('Variance Deficit', '${d.varianceQuantity.toInt()} ${d.materialUnit}'),
-                      _row('Financial Exposure', Formatters.currency(d.financialImpactEtb)),
-                      if (d.assignedToName != null) _row('Assigned To', d.assignedToName!),
-                      if (d.resolutionType != null) _row('Resolution Type', d.resolutionType!.replaceAll('_', ' ')),
-                      if (d.resolutionNotes != null) _row('Resolution Agreement', d.resolutionNotes!),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Site Inspector Observation: "${d.description}"',
-                        style: const TextStyle(fontSize: 12.5, fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                      const Divider(height: 28),
+                      _row('Supplier', d.supplierName, isDark),
+                      _row('Waybill Number', d.waybillNumber, isDark),
+                      _row('Truck License Plate', d.truckLicensePlate, isDark),
+                      _row('Purchase Order', d.poNumber, isDark),
+                      _row('Expected Quantity', '${d.expectedQuantity.toInt()} ${d.materialUnit}', isDark),
+                      _row('Actual Received', '${d.actualQuantity.toInt()} ${d.materialUnit}', isDark),
+                      _row('Variance Deficit', '${d.varianceQuantity.toInt()} ${d.materialUnit}', isDark),
+                      _row('Financial Impact Exposure', Formatters.currency(d.financialImpactEtb), isDark),
+                      if (d.assignedToName != null) _row('Assigned To', d.assignedToName!, isDark),
+                      if (d.resolutionType != null) _row('Resolution Type', d.resolutionType!.replaceAll('_', ' '), isDark),
+                      if (d.resolutionNotes != null) _row('Resolution Agreement', d.resolutionNotes!, isDark),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceWarm,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderSubtle),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.rate_review_outlined, size: 18, color: AppColors.textMuted),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Storekeeper Observation: "${d.description}"',
+                                style: const TextStyle(fontSize: 12.5, fontStyle: FontStyle.italic, color: AppColors.textSecondary, height: 1.35),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -180,77 +204,85 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
               const SizedBox(height: 16),
 
               // Gemini AI Discrepancy Intelligence Card
-              Card(
-                color: const Color(0xFF0F172A),
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.electricBlue,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.heroCardGradient,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                gradient: AppGradients.aiGradient,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              const SizedBox(width: 10),
-                              const Text(
-                                'Gemini AI Delivery Intelligence',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14.5),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(6),
+                              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
                             ),
-                            child: Text(
-                              ai.isAiGenerated ? 'Gemini 1.5 Flash' : 'Expert Rule Engine',
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.w600),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Gemini AI Contract Intelligence',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
                             ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      const Text(
-                        'Commercial & Schedule Impact:',
-                        style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.w700, fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ai.explanation,
-                        style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13, height: 1.45),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Recommended Contractual Action (FIDIC / PPA):',
-                        style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.w700, fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ai.recommendedAction,
-                        style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13, height: 1.45),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'SiteLedger AI assists decision-making; final contractual sign-off remains with authorized project personnel.',
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 10.5, fontStyle: FontStyle.italic),
-                      ),
-                    ],
-                  ),
+                          child: Text(
+                            ai.isAiGenerated ? 'Gemini 1.5 Flash' : 'Expert Rule Engine',
+                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Commercial & Schedule Risk Analysis:',
+                      style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ai.explanation,
+                      style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13, height: 1.45),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Recommended Action (FIDIC / PPA Standard):',
+                      style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ai.recommendedAction,
+                      style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13, height: 1.45),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'SiteLedger AI assists decision-making; final contractual sign-off remains with authorized project personnel.',
+                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10.5, fontStyle: FontStyle.italic),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
 
               // Document Resolution Action
               if (d.isOpen)
@@ -272,9 +304,9 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
     );
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(String label, String value, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -282,7 +314,11 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navyDark),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+              ),
               textAlign: TextAlign.end,
             ),
           ),
@@ -291,3 +327,4 @@ class _DiscrepancyDetailScreenState extends ConsumerState<DiscrepancyDetailScree
     );
   }
 }
+

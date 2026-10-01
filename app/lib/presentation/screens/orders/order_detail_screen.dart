@@ -24,7 +24,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Approve Purchase Order'),
-        content: const Text('Are you sure you want to approve this purchase order? This authorizes site storekeepers to accept incoming material shipments.'),
+        content: const Text('Are you sure you want to approve this purchase order? This authorizes site storekeepers to accept incoming material shipments at the gate.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
@@ -43,7 +43,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         ref.invalidate(ordersProvider);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Purchase order approved successfully!')),
+            const SnackBar(
+              backgroundColor: AppColors.emeraldSuccess,
+              content: Text('✅ Purchase order approved and storekeepers authorized!'),
+            ),
           );
         }
       } catch (e) {
@@ -62,23 +65,24 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(poNumber),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(poNumber, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.borderSubtle),
               ),
-              child: const Icon(Icons.qr_code_2_rounded, size: 180, color: AppColors.navyDark),
+              child: const Icon(Icons.qr_code_2_rounded, size: 190, color: AppColors.navyDark),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const Text(
               'Present this QR code or PO number at site scale gate for rapid material intake.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -94,10 +98,22 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   Widget build(BuildContext context) {
     final orderFuture = ref.watch(orderRepoProvider).getOrderDetails(widget.orderId);
     final user = ref.watch(authProvider).user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Order Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_rounded),
+            tooltip: 'View QR Code',
+            onPressed: () {
+              orderFuture.then((po) {
+                if (mounted) _showQrDialog(po.poNumber);
+              });
+            },
+          ),
+        ],
       ),
       body: FutureBuilder(
         future: orderFuture,
@@ -113,47 +129,64 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           final canApprove = (user?.isProjectManager == true) && po.status == 'PENDING_APPROVAL';
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
             children: [
               // Header Card
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                po.poNumber,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.navyDark),
-                              ),
-                              Text(
-                                po.projectName,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                              ),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  po.poNumber,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  po.projectName,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.electricBlue),
+                                ),
+                              ],
+                            ),
                           ),
                           StatusBadge(status: po.status),
                         ],
                       ),
+                      const SizedBox(height: 16),
+
+                      // Order Pipeline Progress Bar
+                      _buildPipelineStep(po.status),
+
                       const Divider(height: 28),
-                      _detailRow('Supplier', po.supplierName),
-                      if (po.supplierPhone != null) _detailRow('Supplier Contact', po.supplierPhone!),
-                      _detailRow('Total Commitment', Formatters.currency(po.totalAmountEtb)),
-                      _detailRow('Created By', po.createdByName ?? 'Dawit Tadesse (Procurement)'),
-                      if (po.approvedByName != null) _detailRow('Approved By', po.approvedByName!),
-                      _detailRow('Date Created', Formatters.date(po.createdAt)),
-                      if (po.notes != null) _detailRow('Notes', po.notes!),
-                      const SizedBox(height: 12),
+                      _detailRow('Supplier', po.supplierName, isDark),
+                      if (po.supplierPhone != null) _detailRow('Supplier Contact', po.supplierPhone!, isDark),
+                      _detailRow('Total Commitment', Formatters.currency(po.totalAmountEtb), isDark),
+                      _detailRow('Created By', po.createdByName ?? 'Dawit Tadesse (Procurement)', isDark),
+                      if (po.approvedByName != null) _detailRow('Approved By', po.approvedByName!, isDark),
+                      _detailRow('Date Created', Formatters.date(po.createdAt), isDark),
+                      if (po.notes != null) _detailRow('Notes', po.notes!, isDark),
+                      const SizedBox(height: 14),
                       OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 44),
+                        ),
                         onPressed: () => _showQrDialog(po.poNumber),
                         icon: const Icon(Icons.qr_code_rounded, size: 18),
-                        label: const Text('View Order QR Code'),
+                        label: const Text('Display Gate Intake QR Code'),
                       ),
                     ],
                   ),
@@ -186,23 +219,37 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   ),
                   onPressed: () => context.push('/receive', extra: po),
                   icon: const Icon(Icons.local_shipping_outlined),
-                  label: const Text('Start Material Receiving'),
+                  label: const Text('Receive Material Against This Order'),
                 ),
                 const SizedBox(height: 16),
               ],
 
               // Line Items
-              const Text(
-                'Materials Ordered',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.navyDark),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Authorized Line Items',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  Text(
+                    '${po.lines.length} material${po.lines.length > 1 ? "s" : ""}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
               ...po.lines.map((line) {
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -212,21 +259,25 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                             Expanded(
                               child: Text(
                                 line.materialName,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: AppColors.navyDark),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                                ),
                               ),
                             ),
                             Text(
                               Formatters.currency(line.totalPriceEtb),
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.electricBlue),
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.electricBlue),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           'Unit Price: ${Formatters.currency(line.unitPriceEtb)} / ${line.unit}',
                           style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         MaterialProgressBar(
                           ordered: line.orderedQuantity,
                           accepted: line.acceptedQuantity,
@@ -244,9 +295,77 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _buildPipelineStep(String status) {
+    int currentStep = 1;
+    if (status == 'APPROVED') currentStep = 2;
+    if (status == 'PARTIALLY_RECEIVED') currentStep = 3;
+    if (status == 'COMPLETED') currentStep = 4;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWarm,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _stepNode('Drafted', 1, currentStep >= 1),
+          _stepLine(currentStep >= 2),
+          _stepNode('PM Signoff', 2, currentStep >= 2),
+          _stepLine(currentStep >= 3),
+          _stepNode('Offload Intake', 3, currentStep >= 3),
+          _stepLine(currentStep >= 4),
+          _stepNode('Completed', 4, currentStep >= 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepNode(String label, int step, bool isDone) {
+    return Column(
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: isDone ? AppColors.electricBlue : AppColors.borderSubtle,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Icon(
+              isDone ? Icons.check_rounded : Icons.circle,
+              size: isDone ? 14 : 6,
+              color: isDone ? Colors.white : AppColors.textMuted,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9.5,
+            fontWeight: isDone ? FontWeight.w700 : FontWeight.w500,
+            color: isDone ? AppColors.navyDark : AppColors.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _stepLine(bool isDone) {
+    return Expanded(
+      child: Container(
+        height: 2,
+        margin: const EdgeInsets.only(bottom: 14),
+        color: isDone ? AppColors.electricBlue : AppColors.borderSubtle,
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -254,7 +373,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navyDark),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+              ),
               textAlign: TextAlign.end,
             ),
           ),
@@ -263,3 +386,4 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 }
+

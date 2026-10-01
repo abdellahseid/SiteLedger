@@ -17,7 +17,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   final _notesCtrl = TextEditingController(text: 'Reinforcement steel and cement for slab pouring');
   final _qtyCtrl = TextEditingController(text: '1000');
   final _priceCtrl = TextEditingController(text: '1350');
-  
+
   bool _isSubmitting = false;
 
   @override
@@ -45,7 +45,6 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      // Fetch available materials and suppliers from API
       final materials = await ref.read(apiClientProvider).get('/api/materials');
       final suppliers = await ref.read(apiClientProvider).get('/api/materials/suppliers');
 
@@ -75,7 +74,10 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Purchase order created and submitted for PM approval!')),
+          const SnackBar(
+            backgroundColor: AppColors.emeraldSuccess,
+            content: Text('✅ Purchase order created and submitted for PM approval!'),
+          ),
         );
         context.pop();
       }
@@ -91,6 +93,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedProj = ref.watch(selectedProjectProvider);
+    final qty = double.tryParse(_qtyCtrl.text.trim()) ?? 0;
+    final price = double.tryParse(_priceCtrl.text.trim()) ?? 0;
+    final totalEtb = qty * price;
 
     return Scaffold(
       appBar: AppBar(
@@ -101,60 +106,164 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
+            // Project Destination Banner
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.electricBlue.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.electricBlue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.apartment_rounded, color: Color(0xFF38BDF8), size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Destination Construction Site',
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          selectedProj?.name ?? "Bole Lemi Industrial Park (Phase II)",
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.electricBlue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedProj?.code ?? 'BLIP',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF38BDF8)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Order Metadata Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppShadows.subtle,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Order Details',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navyDark),
+                      'Order Identification',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.navyDark),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Project: ${selectedProj?.name ?? "Bole Lemi Industrial Park"}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _poNumberCtrl,
-                      decoration: const InputDecoration(labelText: 'PO Number'),
+                      decoration: const InputDecoration(
+                        labelText: 'Purchase Order #',
+                        prefixIcon: Icon(Icons.tag_rounded),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _notesCtrl,
-                      decoration: const InputDecoration(labelText: 'Order Notes & Specifications'),
+                      decoration: const InputDecoration(
+                        labelText: 'Order Specifications & Notes',
+                        prefixIcon: Icon(Icons.notes_rounded),
+                      ),
                       maxLines: 2,
                     ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
-            Card(
+
+            // Material Line Item & Live Pricing
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppShadows.subtle,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Material Line Item',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navyDark),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Material Line Item',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.navyDark),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.blueLight,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('Standard Cement', style: TextStyle(color: AppColors.electricBlue, fontWeight: FontWeight.w700, fontSize: 11)),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Portland Pozzolana Cement (PPC 42.5R) — 50kg Bags',
-                      style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.navyDark),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceWarm,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.inventory_2_rounded, size: 20, color: AppColors.electricBlue),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Portland Pozzolana Cement (PPC 42.5R) — 50kg Bags',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.navyDark),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
                           child: TextFormField(
                             controller: _qtyCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Ordered Quantity (Bags)'),
+                            decoration: const InputDecoration(
+                              labelText: 'Quantity (Bags)',
+                              prefixIcon: Icon(Icons.numbers_rounded),
+                            ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -163,33 +272,60 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                           child: TextFormField(
                             controller: _priceCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Unit Price (ETB)'),
+                            decoration: const InputDecoration(
+                              labelText: 'Unit Price (ETB)',
+                              prefixIcon: Icon(Icons.payments_outlined),
+                            ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Builder(
-                      builder: (ctx) {
-                        final qty = double.tryParse(_qtyCtrl.text.trim()) ?? 0;
-                        final price = double.tryParse(_priceCtrl.text.trim()) ?? 0;
-                        return Text(
-                          'Estimated Total: ${Formatters.currency(qty * price)}',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.electricBlue),
-                        );
-                      },
+                    const SizedBox(height: 16),
+
+                    // Estimated Total Card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.sapphireGaze,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Estimated Total Order Value:',
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            Formatters.currency(totalEtb),
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
               onPressed: _isSubmitting ? null : _handleSubmit,
               child: _isSubmitting
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Create & Submit for Approval'),
+                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Create & Submit for PM Signoff', style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800)),
             ),
           ],
         ),

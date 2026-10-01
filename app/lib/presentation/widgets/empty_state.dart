@@ -19,37 +19,73 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                color: AppColors.blueLight,
+                color: isDark ? const Color(0xFF1E293B) : AppColors.blueLight,
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.electricBlue.withOpacity(0.18),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.electricBlue.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  )
+                ],
               ),
-              child: Icon(icon, size: 40, color: AppColors.electricBlue),
+              child: Icon(icon, size: 42, color: AppColors.electricBlue),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.navyDark),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.navyDark,
+                letterSpacing: -0.3,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(
-              message,
-              style: const TextStyle(fontSize: 13.5, color: AppColors.textSecondary, height: 1.4),
-              textAlign: TextAlign.center,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  height: 1.45,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
             if (buttonLabel != null && onButtonPressed != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton(
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.electricBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
                 onPressed: onButtonPressed,
-                child: Text(buttonLabel!),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(
+                  buttonLabel!,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
               ),
             ]
           ],
@@ -59,56 +95,3 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-class MaterialProgressBar extends StatelessWidget {
-  final double ordered;
-  final double accepted;
-  final String unit;
-
-  const MaterialProgressBar({
-    super.key,
-    required this.ordered,
-    required this.accepted,
-    required this.unit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final double ratio = ordered > 0 ? (accepted / ordered).clamp(0.0, 1.0) : 0.0;
-    final int percent = (ratio * 100).round();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '$accepted of $ordered $unit',
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-            ),
-            Text(
-              '$percent%',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: ratio >= 1.0 ? AppColors.emeraldSuccess : AppColors.electricBlue,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: ratio,
-            minHeight: 8,
-            backgroundColor: AppColors.borderSubtle,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              ratio >= 1.0 ? AppColors.emeraldSuccess : AppColors.electricBlue,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
