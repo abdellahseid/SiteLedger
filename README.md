@@ -8,7 +8,6 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.4-336791?logo=postgresql)](https://www.postgresql.org)
 [![Drift](https://img.shields.io/badge/Drift_SQLite-Offline_First-yellow)](https://drift.simonbinder.eu)
 [![Gemini](https://img.shields.io/badge/Google_Gemini-1.5_Flash-8E75B2?logo=google)](https://deepmind.google/technologies/gemini)
-[![Tests](https://img.shields.io/badge/Tests-100%25_Passing-emerald)](https://github.com)
 
 ---
 
